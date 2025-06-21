@@ -110,26 +110,16 @@ int handValue(vector<string> hand) {
     for (string card: hand) {
         if (card == "A") {
             aces++;
+            sum += 11;
         } else {
             sum += getValue(card);
         }
     }
     
-    if (aces) {
-        int oneCount = 0;
-        int currSum;
-        
-        while (aces) {
-            currSum = sum + aces*11 + oneCount; 
-            
-            if (currSum <= 21) {
-                return currSum;
-            }
-            
-            oneCount++;
-            aces--;
-        }
-    } 
+    while (sum > 21 && aces > 0) {
+        sum -= 10;
+        aces--;
+    }
     
     return sum;
 }
@@ -339,7 +329,7 @@ bool instantBlackjack(
 
 bool hit(
     vector<string> dealerHand,
-    vector<vector<string>> playerHands, 
+    vector<vector<string>> &playerHands, 
     int &money, 
     vector<int> &bets,
     int numHand
@@ -457,15 +447,22 @@ bool dealerBust(
     vector<int> bets
 ) {
     if (bust(dealerHand)) {
+        int won = 0;
         for (int i = 0; i < playerHands.size(); i++) {
             vector<string> currHand = playerHands[i];
-
+            
             if (!bust(currHand)) {
                 money += 2 * bets[i];
+                won++;
             }
         }
-    }
 
+        int lost = playerHands.size() - won;
+
+        cout << "Dealer has gone bust!. You have won " << won << " hands " 
+                "and lost " << lost << " hands! \n";
+    }
+    
     return false;
 }
 
@@ -583,8 +580,7 @@ int main() {
         cout << "Money: " << money << endl;
 
         if (!money) {
-            cout << "You are out of money! Would you like to start again? \n"
-                    "1: Yes 2: No \n";
+            cout << "You are out of money! Would you like to start again? \n";
 
             checkPlay(play);
             cout << "Please enter your money amount: ";
