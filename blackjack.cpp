@@ -300,10 +300,10 @@ bool instantBlackjack(
     vector<string> dealerHand, 
     vector<vector<string>> playerHands,
     int &money,
-    vector<int> bets
+    vector<int> bets,
+    int &pushHands
 ) {
     if (checkBlackjack(dealerHand)) {
-        int pushHands = 0;
         int hands = playerHands.size();
 
         for (int i = 0; i < hands; i++) {
@@ -316,10 +316,8 @@ bool instantBlackjack(
         }
 
         printHands(dealerHand, playerHands, bets);
-        int lost = hands - pushHands;
 
-        cout << "The dealer has a Blackjack, you lost " << lost 
-                << " hands and pushed " << pushHands << " hands. \n"; 
+        cout << "The dealer has gotten a blackjack instantly, you lost. \n"; 
 
         return true;
     }
@@ -444,10 +442,10 @@ bool dealerBust(
     vector<string> dealerHand,
     vector<vector<string>> playerHands, 
     int &money, 
-    vector<int> bets
+    vector<int> bets,
+    int &won
 ) {
     if (bust(dealerHand)) {
-        int won = 0;
         for (int i = 0; i < playerHands.size(); i++) {
             vector<string> currHand = playerHands[i];
             
@@ -459,8 +457,9 @@ bool dealerBust(
 
         int lost = playerHands.size() - won;
 
-        cout << "Dealer has gone bust!. You have won " << won << " hands " 
-                "and lost " << lost << " hands! \n";
+        cout << "Dealer has gone bust! \n";
+
+        return true;
     }
     
     return false;
@@ -483,6 +482,30 @@ bool playerAllBust(vector<vector<string>> playerHands) {
     }
  
     return false;
+}
+
+void roundEnd(
+    int &money, 
+    bool &play,
+    int won,
+    int lost,
+    int pushHands
+) {
+    cout << "You won " << won << " hands, lost " << lost << 
+        " hands, and pushed " << pushHands << " hands. \n"; 
+
+    cout << "Money: " << money << endl;
+
+    if (!money) {
+        cout << "You are out of money! Would you like to start again? \n";
+
+        checkPlay(play);
+        cout << "Please enter your money amount: ";
+
+        money = getAmount();
+    } else {
+        checkPlay(play);
+    }
 }
 
 
@@ -508,8 +531,12 @@ int main() {
         vector<string> dealerHand;
         initialCards(dealerHand, playerHands, bets, hands);
 
-        if (instantBlackjack(dealerHand, playerHands, money, bets)) {
-            checkPlay(play);
+        int won = 0;
+        int lost = 0;
+        int pushHands = 0;
+        
+        if (instantBlackjack(dealerHand, playerHands, money, bets, pushHands)) {
+            roundEnd(money, play, 0, hands - pushHands, pushHands);
             continue;
         }
         
@@ -526,19 +553,17 @@ int main() {
         }
 
         if (playerAllBust(playerHands)) {
+            roundEnd(money, play, 0, hands, 0);
             continue;
         }
 
         dealerAction(dealerHand, playerHands, bets);
 
-        if (dealerBust(dealerHand, playerHands, money, bets)) {
-            checkPlay(play);
+        if (dealerBust(dealerHand, playerHands, money, bets, won)) {
+            roundEnd(money, play, won, hands - won, 0);
             continue;
         }
 
-        int pushHands = 0;
-        int won = 0;
-        int lost = 0;
         for (int i = 0; i < hands; i ++) {
             vector<string> currHand = playerHands[i];
 
@@ -574,21 +599,7 @@ int main() {
             sleep_for(1000ms);
         }
 
-        cout << "You won " << won << " hands, lost " << lost << 
-        " hands, and pushed " << pushHands << " hands. \n"; 
-
-        cout << "Money: " << money << endl;
-
-        if (!money) {
-            cout << "You are out of money! Would you like to start again? \n";
-
-            checkPlay(play);
-            cout << "Please enter your money amount: ";
-
-            money = getAmount();
-        } else {
-            checkPlay(play);
-        }
+        roundEnd(money, play, won, lost, pushHands);
     }
 
     cout << "Thank you. Exiting \n";
